@@ -1,0 +1,9 @@
+node_modules/
+dist/
+test-results/
+.DS_Store
+designs/
+.env
+.env.*
+__pycache__/
+playwright-report/
