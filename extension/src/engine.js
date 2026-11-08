@@ -1,5 +1,6 @@
 import { DEFAULT_SETTINGS, groupLabel, groupTitle, planGroups, resolveOwnership, siteForTab } from "./sites.js";
 import { coverPresentation, coverUrl, iconRevision, readCover } from "./covers.js";
+import { customGroupIds } from "./custom.js";
 
 export function createEngine(api) {
   const coverBase = api.runtime?.getURL("cover.html");
@@ -17,7 +18,9 @@ export function createEngine(api) {
       api.storage.local.get("groupRecovery"),
     ]);
     const owned = resolveOwnership(tabs, groups, session.ownedGroups, local.knownSites, coverBase);
+    const custom = await customGroupIds(api, groups, tabs);
     for (const group of groups) {
+      if (custom.has(group.id)) { delete owned[group.id]; continue; }
       const saved = recovery.groupRecovery?.[group.id];
       if (owned[group.id] || session.ownedGroups?.[group.id] || group.shared || !saved
         || saved.windowId !== windowId || saved.title !== group.title) continue;

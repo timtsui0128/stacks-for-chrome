@@ -1,8 +1,10 @@
 import { coverPresentation, coverUrl, editTabs, iconRevision, readCover } from "./covers.js";
 import { groupTitle, planGroups, siteForTab, siteForUrl, isAuthenticationUrl } from "./sites.js";
 import { readMarkerStyle } from "./styles.js";
+import { createFocusGuard } from "./focus.js";
+import { customGroupIds } from "./custom.js";
 
-export function createCompactEngine(api, native) {
+export function createCompactEngine(api, native, focusGuard = createFocusGuard()) {
   const coverBase = api.runtime.getURL("cover.html");
   const parkingUrl = api.runtime.getURL("parking.html");
   const markerUrl = token => `${parkingUrl}?stack=${token}`;
@@ -74,10 +76,12 @@ export function createCompactEngine(api, native) {
     });
     const records = session.compactStacks || recovery.compactRecovery || {};
     const covers = tabs.map(entry).filter(Boolean);
+    const custom = await customGroupIds(api, groups, tabs);
     // Only explicitly recorded groups belong to compact stacks. Renaming their
     // markers edits their saved style; unrelated native groups stay manual.
     for (const cover of covers) {
       const group = groups.find(group => group.id === records[cover.token]?.lineGroupId
+        && !custom.has(group.id)
         && group.windowId === cover.windowId && !group.shared
         && tabs.some(tab => tab.groupId === group.id && (records[cover.token]?.memberIds?.includes(tab.id) || records[cover.token]?.memberIds?.includes(tab.openerTabId))
           && belongs(tab, cover, records[cover.token])));
@@ -85,7 +89,7 @@ export function createCompactEngine(api, native) {
       else if (records[cover.token]) delete records[cover.token].lineGroupId;
     }
     return {
-      tabs, groups, records, parkingPages,
+      tabs, groups, records, parkingPages, custom,
       parking: parkingPages[0],
       covers,
     };
@@ -114,6 +118,7 @@ export function createCompactEngine(api, native) {
   function lineGroup(state, cover) {
     const record = state.records[cover.token];
     return state.groups.find(group => group.id === record?.lineGroupId
+      && !state.custom.has(group.id)
       && group.windowId === cover.windowId && !group.shared
       && state.tabs.some(tab => tab.groupId === group.id && (record.memberIds?.includes(tab.id) || record.memberIds?.includes(tab.openerTabId))
         && belongs(tab, cover, record)));
@@ -243,22 +248,30 @@ export function createCompactEngine(api, native) {
 
   async function park(cover, members, state) {
     if (!members.length) return;
-    await removeLine(cover, state);
-    const existing = parkedMarker(state, cover);
-    const windowId = existing?.windowId ?? state.parking?.windowId
-      ?? (await editTabs(() => api.windows.create({ type: "normal", url: parkingUrl, focused: false, state: "minimized" }))).id;
-    const marker = existing || await editTabs(() => api.tabs.create({ windowId, url: markerUrl(cover.token), active: false }));
-    const after = parkedTabs(state, cover).at(-1) || marker;
-    const ids = members.map(tab => tab.id);
-    try {
-      await editTabs(() => api.tabs.move(ids, { windowId, index: after.index + 1 }));
-      await minimize(windowId);
-    } catch (error) {
-      const moved = (await api.tabs.query({ windowId })).filter(tab => ids.includes(tab.id));
-      await moveBack(cover, moved);
-      await alignMembers(cover);
-      throw error;
-    }
+    return focusGuard.run(cover.windowId, async () => {
+      // Choose our own header before moving an active page. Otherwise Chrome can
+      // select a neighbour's header and accidentally open that other stack.
+      const active = (await api.tabs.query({ windowId: cover.windowId, active: true }))[0];
+      if (members.some(tab => tab.id === active?.id)) {
+        await editTabs(() => api.tabs.update(cover.id, { active: true }));
+      }
+      await removeLine(cover, state);
+      const existing = parkedMarker(state, cover);
+      const windowId = existing?.windowId ?? state.parking?.windowId
+        ?? (await editTabs(() => api.windows.create({ type: "normal", url: parkingUrl, focused: false, state: "minimized" }))).id;
+      const marker = existing || await editTabs(() => api.tabs.create({ windowId, url: markerUrl(cover.token), active: false }));
+      const after = parkedTabs(state, cover).at(-1) || marker;
+      const ids = members.map(tab => tab.id);
+      try {
+        await editTabs(() => api.tabs.move(ids, { windowId, index: after.index + 1 }));
+        await minimize(windowId);
+      } catch (error) {
+        const moved = (await api.tabs.query({ windowId })).filter(tab => ids.includes(tab.id));
+        await moveBack(cover, moved);
+        await alignMembers(cover);
+        throw error;
+      }
+    });
   }
 
   async function tidyParking(state) {
@@ -450,7 +463,8 @@ export function createCompactEngine(api, native) {
       if (target) await editTabs(() => api.tabs.update(target.id, { active: true }));
     } else if (local.length) {
       const outside = state.tabs.filter(tab => tab.windowId === cover.windowId
-        && !readCover(tab, coverBase) && !local.some(member => member.id === tab.id));
+        && !readCover(tab, coverBase) && !local.some(member => member.id === tab.id)
+        && !state.groups.some(group => group.id === tab.groupId && group.collapsed));
       const target = outside.find(tab => tab.id === record.returnTabId) || outside.find(tab => tab.id === previous) || outside[0];
       state.records[cover.token] = { ...record, key: cover.key, windowId: cover.windowId, coverId: cover.id, lastMember: previous };
       await saveRecords(state.records);
@@ -521,8 +535,21 @@ export function createCompactEngine(api, native) {
     await reconcile(windowId, true);
   }
 
+  async function managementSnapshot(windowId) {
+    const state = await inventory();
+    if (state.parkingPages.some(tab => tab.windowId === windowId)) throw new Error("Open Custom stacks from your main Chrome window.");
+    const ctx = await native.context(windowId);
+    const entries = state.covers.filter(cover => cover.windowId === windowId);
+    const parked = entries.flatMap(cover => parkedTabs(state, cover).map(tab => ({ ...tab, website: cover.key, parked: true })));
+    const automaticGroupIds = [...Object.keys(ctx.owned).map(Number), ...entries.map(cover => lineGroup(state, cover)?.id).filter(Number.isInteger)];
+    const shared = new Set(ctx.groups.filter(group => group.shared).map(group => group.id));
+    const tabs = [...ctx.tabs, ...parked].filter(tab => !tab.pinned && !tab.incognito && !shared.has(tab.groupId)
+      && /^(https?:|file:)/.test(tab.pendingUrl || tab.url || ""));
+    return { tabs: tabs.map(tab => ({ ...tab, website: tab.website || siteForTab(tab)?.name || "Local file" })), groups: ctx.groups, automaticGroupIds };
+  }
+
   return {
     ...native, reconcile, activate, coverState, collapse, release, recoverParking, enableCompact, recoverAfterReload, captureGroupStyle, repairCover,
-    refreshAppearance: windowId => reconcile(windowId, false, true),
+    refreshAppearance: windowId => reconcile(windowId, false, true), managementSnapshot,
   };
 }

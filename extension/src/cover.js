@@ -3,7 +3,6 @@ const status = document.querySelector("#status");
 const open = document.querySelector("#open");
 let refreshing = false;
 let again = false;
-let toggling = false;
 async function refresh() {
   if (refreshing) { again = true; return; }
   refreshing = true;
@@ -33,20 +32,8 @@ async function refresh() {
 }
 chrome.storage.onChanged.addListener((_changes, area) => { if (area === "session") void refresh(); });
 open.addEventListener("click", () => { void chrome.runtime.sendMessage({ type: "cover-open" }).then(refresh); });
-async function toggleWhenVisible() {
-  if (toggling || document.visibilityState !== "visible" || new URL(location.href).searchParams.get("compact") !== "1") return;
-  toggling = true;
-  try {
-    const result = await chrome.runtime.sendMessage({ type: "cover-toggle" });
-    if (!result?.ok && result?.error) status.textContent = result.error;
-  } catch {
-    status.textContent = "Reconnecting to your stack. Please try again shortly.";
-  } finally {
-    toggling = false;
-    void refresh();
-  }
-}
-document.addEventListener("visibilitychange", () => { void toggleWhenVisible(); });
+// Activation is handled once by the worker. Visibility can also change when
+// Chrome focuses a window or parks tabs; it is not a second click signal.
+document.addEventListener("visibilitychange", () => { if (!document.hidden) void refresh(); });
 void refresh();
-void toggleWhenVisible();
 
