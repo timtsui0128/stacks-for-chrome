@@ -58,8 +58,8 @@ test("toolbar-only grouping, native expansion, automatic updates and preservatio
     await invoke("organize");
     expect(await managed()).toHaveLength(3);
     expect(await tabCount()).toBe(count);
-    expect(await worker.evaluate(() => chrome.runtime.getManifest().action.default_popup)).toBeUndefined();
-    expect(await worker.evaluate(() => chrome.action.getPopup({}))).toBe("");
+    expect(await worker.evaluate(() => chrome.runtime.getManifest().action.default_popup)).toBe("manager.html");
+    expect(await worker.evaluate(() => chrome.action.getPopup({}))).toMatch(/\/manager.html$/);
     expect((await groups()).find(group => group.id === tabs.manualGroup).title).toBe("我的课题");
     expect(await worker.evaluate(id => chrome.tabs.get(id), tabs.pin.id)).toMatchObject({ groupId: -1, pinned: true });
     const activeAfter = await worker.evaluate(() => chrome.tabs.query({ active: true, currentWindow: true }));
