@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Custom stacks · Stacks</title>
+  <link rel="icon" href="icons/32.png">
+  <link rel="stylesheet" href="manager.css">
+  <script type="module" src="src/manager.js"></script>
+</head>
+<body>
+  <header class="brand"><img src="icons/48.png" alt="" width="25" height="25"><span>stacks</span><button id="organize-window" class="quiet">Organize websites</button></header>
+  <div class="layout">
+    <aside>
+      <nav id="categories" aria-label="Tab categories"></nav>
+      <button id="new-stack" class="new-stack">＋ New custom stack</button>
+    </aside>
+    <main>
+      <div class="heading"><div><h1 id="heading">All tabs</h1><p id="description">Select tabs to keep together in your tab bar.</p></div><button id="edit-stack" hidden>Edit stack</button></div>
+      <div class="tools"><input id="search" type="search" placeholder="Search tabs…" aria-label="Search tabs"><button id="refresh" class="quiet">Refresh</button></div>
+      <div class="list-heading"><label><input id="select-all" type="checkbox"> Select visible tabs</label><span id="tab-count"></span></div>
+      <div id="tabs" class="tabs"></div>
+      <div id="empty" hidden>No tabs here yet. Select tabs in All tabs and move them into this stack.</div>
+      <div class="selection-bar"><span id="selection-count" role="status">0 selected</span><button id="release" class="quiet" disabled>Return to automatic</button><select id="destination" aria-label="Destination stack"><option value="">Choose a stack…</option></select><button id="move" class="primary" disabled>Move tabs</button></div>
+      <p id="status" role="status" aria-live="polite"></p>
+      <p class="footnote">This window + collapsed stacks · Custom tabs skip auto-grouping</p>
+    </main>
+  </div>
+  <dialog id="editor" aria-labelledby="dialog-title">
+    <form id="stack-form">
+      <h2 id="dialog-title">New custom stack</h2><p class="dialog-hint">Give your research a place of its own.</p>
+      <label class="field">Name<input id="stack-name" placeholder="e.g. Literature review" maxlength="80" required autocomplete="off"></label>
+      <fieldset><legend>Tab bar color</legend><div id="colors"></div></fieldset>
+      <label id="include-label" class="include"><input id="include-selected" type="checkbox" checked> Include selected tabs</label>
+      <div class="dialog-actions"><button id="delete-stack" type="button" class="danger" hidden>Delete empty stack</button><span></span><button id="cancel" type="button">Cancel</button><button type="submit" class="primary">Save stack</button></div>
+      <p id="dialog-status" role="alert"></p>
+    </form>
+  </dialog>
+</body>
+</html>
