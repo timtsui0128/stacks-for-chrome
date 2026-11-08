@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Stacks — Tab Organizer",
+  "version": "0.7.3",
+  "description": "Keep related tabs together in Chrome. Group by website, show real website logos, and expand or collapse your stacks.",
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage",
+    "alarms",
+    "contextMenus",
+    "favicon"
+  ],
+  "incognito": "not_allowed",
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Organize tabs · Right-click for settings",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png",
+      "48": "icons/48.png",
+      "128": "icons/128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data:"
+  }
+}
