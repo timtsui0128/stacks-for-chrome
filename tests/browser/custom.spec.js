@@ -44,11 +44,22 @@ test("custom stacks own mixed-site and parked tabs across navigation, grouping a
     };
     let manager = await openManager();
     await expect(manager.getByRole("heading", { name: "All tabs", exact: true })).toBeVisible();
+    await manager.screenshot({ path: "/private/tmp/stacks-ui-default.png" });
+    await manager.getByRole("checkbox", { name: "Select Discussion", exact: true }).check();
+    await manager.getByRole("searchbox", { name: "Search tabs" }).fill("no-such-paper-123");
+    await expect(manager.getByText("No matching tabs", { exact: true })).toBeVisible();
+    await expect(manager.getByText("1 selected tab is outside this view.", { exact: true })).toBeVisible();
+    await manager.locator("#empty-action").click();
+    await expect(manager.getByRole("checkbox", { name: "Select Discussion", exact: true })).toBeChecked();
+    await manager.getByRole("button", { name: "Clear selection", exact: true }).click();
+    await expect(manager.getByRole("checkbox", { name: "Select Discussion", exact: true })).not.toBeChecked();
     await manager.getByRole("checkbox", { name: "Select Discussion", exact: true }).check();
     await manager.getByRole("checkbox", { name: "Select Review", exact: true }).check();
-    await manager.getByRole("button", { name: "New custom stack" }).click();
+    await manager.screenshot({ path: "/private/tmp/stacks-ui-selected.png" });
+    await manager.getByRole("combobox", { name: "Destination stack" }).selectOption({ label: "＋ New stack…" });
     await manager.getByLabel("Name", { exact: true }).fill("Literature review");
     await manager.getByRole("radio", { name: "purple", exact: true }).check();
+    await manager.screenshot({ path: "/private/tmp/stacks-ui-editor.png" });
     await manager.getByRole("button", { name: "Save stack" }).click();
     await expect(manager.getByRole("dialog")).not.toBeVisible();
     await expect(manager.getByRole("status").filter({ hasText: "Custom stack created." })).toBeVisible();
@@ -70,7 +81,7 @@ test("custom stacks own mixed-site and parked tabs across navigation, grouping a
     expect((await tabs()).filter(tab => managed.some(item => item.id === tab.id)).every(tab => tab.groupId === customId)).toBe(true);
     await expect.poll(async () => (await covers()).find(tab => tab.title.includes("ChatGPT"))?.title).toBe("▸ ChatGPT · 2");
     await manager.getByRole("button", { name: "Refresh", exact: true }).click();
-    await manager.getByRole("button", { name: "Literature review 2", exact: true }).click();
+    await manager.getByRole("combobox", { name: "View stack" }).selectOption({ label: "Literature review · 2" });
     await manager.getByRole("button", { name: "Edit stack", exact: true }).click();
     await manager.getByLabel("Name", { exact: true }).fill("Paper <AI> ✨");
     await manager.getByRole("radio", { name: "orange", exact: true }).check();
@@ -90,7 +101,7 @@ test("custom stacks own mixed-site and parked tabs across navigation, grouping a
     await extensions.getByRole("button", { name: "Reload", exact: true }).click();
     worker = await nextWorker;
     manager = await openManager();
-    await expect(manager.getByRole("button", { name: "Paper <AI> ✨ 2", exact: true })).toBeVisible();
+    await expect(manager.getByRole("option", { name: "Paper <AI> ✨ · 2", exact: true })).toHaveCount(1);
     expect((await tabs()).filter(tab => managed.some(item => item.id === tab.id)).every(tab => tab.groupId === customId)).toBe(true);
     // Explicit opt-out is the only manager action that re-enables auto grouping.
     await manager.getByRole("checkbox", { name: "Select Discussion", exact: true }).check();
@@ -102,28 +113,32 @@ test("custom stacks own mixed-site and parked tabs across navigation, grouping a
     await expect(pages[0].getByRole("textbox")).toHaveValue("unsaved research notes");
     // Empty categories can be reused, tabs can move between categories, and an
     // existing target group is reused instead of creating duplicate groups.
+    await manager.getByRole("checkbox", { name: "Select Changed", exact: true }).check();
     await manager.getByRole("button", { name: "New custom stack" }).click();
     await manager.getByLabel("Name", { exact: true }).fill("Reading list");
+    await manager.getByRole("checkbox", { name: "Include 1 selected tab", exact: true }).uncheck();
     await manager.getByRole("button", { name: "Save stack" }).click();
     await expect(manager.getByRole("dialog")).not.toBeVisible();
-    await manager.getByRole("checkbox", { name: "Select Changed", exact: true }).check();
+    await expect(manager.getByRole("checkbox", { name: "Select Changed", exact: true })).toBeChecked();
     await manager.getByRole("checkbox", { name: "Select Notes", exact: true }).check();
     await manager.getByRole("combobox", { name: "Destination stack" }).selectOption({ label: "Reading list" });
     await manager.getByRole("button", { name: "Move tabs", exact: true }).click();
-    await expect(manager.getByRole("button", { name: "Reading list 2", exact: true })).toBeVisible();
+    await expect(manager.getByRole("option", { name: "Reading list · 2", exact: true })).toHaveCount(1);
     const readingGroup = (await tabs()).find(tab => tab.id === managed[1].id).groupId;
     await manager.getByRole("checkbox", { name: "Select Outline", exact: true }).check();
     await manager.getByRole("button", { name: "Move tabs", exact: true }).click();
-    await expect(manager.getByRole("button", { name: "Reading list 3", exact: true })).toBeVisible();
+    await expect(manager.getByRole("option", { name: "Reading list · 3", exact: true })).toHaveCount(1);
     expect((await tabs()).filter(tab => tab.groupId === readingGroup)).toHaveLength(3);
     await expect.poll(async () => (await covers()).some(tab => tab.title.includes("Claude"))).toBe(false);
-    await manager.getByRole("button", { name: "Paper <AI> ✨ 0", exact: true }).click();
+    await manager.getByRole("combobox", { name: "View stack" }).selectOption({ label: "Paper <AI> ✨ · 0" });
     await manager.getByRole("button", { name: "Edit stack", exact: true }).click();
     await manager.getByRole("button", { name: "Delete empty stack", exact: true }).click();
     await expect(manager.getByRole("dialog")).not.toBeVisible();
-    await expect(manager.getByRole("button", { name: "Paper <AI> ✨ 0", exact: true })).toHaveCount(0);
+    await expect(manager.getByRole("option", { name: "Paper <AI> ✨ · 0", exact: true })).toHaveCount(0);
     expect((await tabs()).filter(tab => originals.includes(tab.id))).toHaveLength(4);
     await manager.screenshot({ path: "/private/tmp/stacks-custom-manager.png", fullPage: true });
+    await manager.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+    await manager.screenshot({ path: "/private/tmp/stacks-ui-dark.png" });
   } finally {
     await browser.close(); await rm(profile, { recursive: true, force: true });
   }
