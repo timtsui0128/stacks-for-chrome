@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stacks — Tab Organizer",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Keep tabs together in Chrome. Organize by website with real logos, or create custom stacks that stay out of automatic grouping.",
   "minimum_chrome_version": "127",
   "permissions": [
