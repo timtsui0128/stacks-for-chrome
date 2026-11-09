@@ -4,7 +4,7 @@
 
 Keep related tabs together in Chrome's top tab bar. Stacks groups tabs by website, shows each site's real logo, and lets you expand or collapse its tabs.
 
-Version **0.8.0** adds a compact toolbar popup for custom tab categories and fixes neighbouring stacks opening when Chrome automatically selects a tab after collapse or closing a page. Automatic website stacks keep their website logos; custom groups keep their own text labels and colors. The minimal **03 Tabs** icon and English interface are unchanged.
+Version **0.8.1** refines the compact popup with aligned controls, website icons, a searchable tab list, a category picker, and selection-aware move actions. The fixes for neighbouring stacks opening after collapse or closing a page are retained. Automatic website stacks keep their website logos; custom groups keep their own text labels and colors. The minimal **03 Tabs** icon and English interface are unchanged.
 
 ## Install
 
@@ -32,11 +32,11 @@ Chrome offers nine group colors: grey, blue, red, yellow, green, pink, purple, c
 1. Click the Stacks toolbar icon to open the **440 × 580 px popup**. It opens over your current page without adding a tab.
 2. Select tabs from one or more websites, then choose **New custom stack** and enter a name and color. Tabs from collapsed website stacks are included in the list.
 3. To add tabs to an existing category, select them, choose the destination, and click **Move tabs**.
-4. Select a category to edit its name or color. Select its tabs and use **Return to automatic** when you want website grouping to handle them again.
+4. Choose a category from **View stack** to edit its name or color. Select its tabs and use **Return to automatic** when you want website grouping to handle them again.
 
 Custom stacks appear as native groups in Chrome's top tab bar, with a text label and colored underline. Click the native group label to expand or collapse. Their tabs are excluded from automatic website grouping, including when navigating to another website. Website logos remain on automatic stacks; custom categories have no extra logo control tab.
 
-The popup lists the source window's eligible tabs and parked members, with search and multi-selection. Existing manually created native groups are recognized. Pinned tabs, shared groups and incognito tabs are excluded. Empty categories are kept for reuse and can be deleted without closing any pages. Dragging a tab out of a custom native group also makes it eligible for automatic grouping again.
+The popup lists the source window's eligible tabs and parked members, with search and multi-selection. Selection is preserved while filtering, with a notice for selected tabs outside the current view and a **Clear selection** control. **New stack…** in the destination picker creates a category directly from the selected tabs. Existing manually created native groups are recognized. Pinned tabs, shared groups and incognito tabs are excluded. Empty categories are kept for reuse and can be deleted without closing any pages. Dragging a tab out of a custom native group also makes it eligible for automatic grouping again.
 
 Categories and group associations are saved locally; pages remain live Chrome tabs. This is not a bookmark or closed-tab archive.
 
@@ -86,7 +86,7 @@ npm run test:browser
 npm run package
 ```
 
-The package is written to `dist/stacks-0.8.0.zip`. Browser tests use isolated temporary profiles, including adjacent-stack collapse, closing an active page beside collapsed stacks, custom categorization, website logos, unsaved-page preservation and reload recovery.
+The package is written to `dist/stacks-0.8.1.zip`. Browser tests use isolated temporary profiles, including adjacent-stack collapse, closing an active page beside collapsed stacks, custom categorization, website logos, unsaved-page preservation and reload recovery.
 
 To regenerate the approved app icon, install Pillow (`python3 -m pip install Pillow`) and run `python3 scripts/icons.py`. This produces SVG brand assets and 16, 32, 48, and 128 px PNG extension icons from shared geometry. Website favicons are separate from the app icon.
 
