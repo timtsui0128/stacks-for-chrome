@@ -30,7 +30,18 @@ async function refresh() {
     if (again) { again = false; void refresh(); }
   }
 }
-chrome.storage.onChanged.addListener((_changes, area) => { if (area === "session") void refresh(); });
+const token = new URL(location.href).searchParams.get("stack");
+const compact = new URL(location.href).searchParams.get("compact") === "1";
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "session") return;
+  const change = changes[compact ? "compactStacks" : "ownedGroups"];
+  if (!change) return;
+  const ownRecord = records => compact ? records?.[token]
+    : Object.values(records || {}).find(record => record.coverToken === token);
+  // Focus/Undo changes and other stacks must not queue a favicon render for
+  // every control tab ahead of the user's next expand/collapse click.
+  if (JSON.stringify(ownRecord(change.oldValue)) !== JSON.stringify(ownRecord(change.newValue))) void refresh();
+});
 open.addEventListener("click", () => { void chrome.runtime.sendMessage({ type: "cover-open" }).then(refresh); });
 // Activation is handled once by the worker. Visibility can also change when
 // Chrome focuses a window or parks tabs; it is not a second click signal.

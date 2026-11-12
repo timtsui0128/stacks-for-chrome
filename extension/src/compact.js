@@ -290,13 +290,19 @@ export function createCompactEngine(api, native, focusGuard = createFocusGuard()
   async function tidyParking(state) {
     const anchor = state.parking;
     if (!anchor) return;
-    const tabs = await api.tabs.query({ windowId: anchor.windowId });
+    const all = await api.tabs.query({});
+    const tabs = all.filter(tab => tab.windowId === anchor.windowId);
+    const liveTokens = new Set(all.map(entry).filter(Boolean).map(cover => cover.token));
     const parkingIds = new Set(state.parkingPages.map(tab => tab.id));
     const empty = tabs.filter((tab, i) => parkingIds.has(tab.id) && (tab.pendingUrl || tab.url) !== parkingUrl
+      && !liveTokens.has(new URL(tab.pendingUrl || tab.url).searchParams.get("stack"))
       && (!tabs[i + 1] || parkingIds.has(tabs[i + 1].id)));
     if (empty.length) await api.tabs.remove(empty.map(tab => tab.id));
     const remaining = tabs.filter(tab => !empty.some(page => page.id === tab.id));
-    if (remaining.length === 1 && remaining[0].url === parkingUrl) await api.tabs.remove(remaining[0].id);
+    // Reuse the minimized window and each live cover's empty marker. Creating
+    // a new window or marker can restore the window and replay its minimize
+    // animation on macOS. Remove them when their covers are closed or disabled.
+    if (!liveTokens.size && remaining.length === 1 && remaining[0].url === parkingUrl) await api.tabs.remove(remaining[0].id);
   }
 
   async function forgetClosed(windowId, state, force) {
@@ -475,6 +481,7 @@ export function createCompactEngine(api, native, focusGuard = createFocusGuard()
     if (state.parkingPages.some(tab => tab.windowId === windowId)) {
       // Closing a parked page changes the count shown back on its cover.
       for (const source of new Set(state.covers.map(cover => cover.windowId))) await publish(source);
+      await tidyParking(state);
       return;
     }
     const prefs = await native.settings();

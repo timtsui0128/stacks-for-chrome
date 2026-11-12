@@ -43,6 +43,7 @@ test("compact stacks preserve live pages with arrows, badges and editable native
       const anchor = (await chrome.tabs.query({})).find(tab => tab.url.endsWith("/parking.html"));
       return anchor && (await chrome.windows.get(anchor.windowId)).state;
     })).toBe("minimized");
+    const parkingBefore = (await tabs()).filter(tab => tab.url.includes("/parking.html"));
     const clickCover = () => worker.evaluate(id => chrome.tabs.update(id, { active: true }), coverId);
     const coverPage = browser.pages().find(page => page.url().includes("/cover.html?"));
     await expect.poll(async () => (await covers())[0]?.favIconUrl).toMatch(/^data:image\/png;base64,/);
@@ -81,6 +82,13 @@ test("compact stacks preserve live pages with arrows, badges and editable native
     expect((await tabs()).filter(tab => originals.includes(tab.id)).every(tab => tab.groupId === lineId)).toBe(true);
     await expect.poll(async () => (await covers())[0]?.title).toBe("▾ ChatGPT · 2");
     await expect.poll(badgePixel).toEqual([51, 125, 97, 255]);
+    await coverPage.evaluate(() => chrome.runtime.sendMessage({ type: "cover-state" }));
+    // Keep the empty holding window and stack marker ready for the next click.
+    // Recreating either one restores/minimizes a macOS window on every collapse.
+    expect((await tabs()).filter(tab => tab.url.includes("/parking.html")).map(tab => tab.id))
+      .toEqual(parkingBefore.map(tab => tab.id));
+    expect(await worker.evaluate(id => chrome.windows.get(id), parkingBefore[0].windowId))
+      .toMatchObject({ state: "minimized" });
     await worker.evaluate(() => chrome.storage.session.clear());
     await expect(first.getByRole("textbox")).toHaveValue("still editing");
     expect(await worker.evaluate(() => globalThis.stacksEditLocks)).toBe(2);
@@ -91,8 +99,14 @@ test("compact stacks preserve live pages with arrows, badges and editable native
     expect(await sourceGroups()).toEqual([]);
     await expect.poll(async () => (await covers())[0]?.title).toBe("▸ ChatGPT · 2");
     await expect.poll(badgePixel).toEqual([255, 255, 255, 255]);
+    expect((await tabs()).filter(tab => tab.url.includes("/parking.html")).map(tab => tab.id))
+      .toEqual(parkingBefore.map(tab => tab.id));
     await clickCover();
     await expect.poll(async () => (await tabs()).filter(tab => originals.includes(tab.id)).every(tab => tab.windowId === source)).toBe(true);
+    await expect.poll(async () => (await covers())[0]?.title).toBe("▾ ChatGPT · 2");
+    // Manually closing the now-empty holding window must be safe; the next
+    // collapse recreates it, without replacing or reloading the live pages.
+    await worker.evaluate(id => chrome.windows.remove(id), parkingBefore[0].windowId);
     const reopened = (await sourceGroups())[0];
     await worker.evaluate(id => chrome.tabGroups.update(id, { collapsed: true }), reopened.id);
     await expect.poll(async () => (await tabs()).filter(tab => originals.includes(tab.id)).every(tab => tab.windowId !== source)).toBe(true);
@@ -107,7 +121,23 @@ test("compact stacks preserve live pages with arrows, badges and editable native
       .toEqual(originals.map(id => [id, source]));
     expect(await covers()).toEqual([]);
     expect(await sourceGroups()).toEqual([]);
+    await expect.poll(async () => (await tabs()).filter(tab => tab.url.includes("/parking.html"))).toEqual([]);
     await expect(first.getByRole("textbox")).toHaveValue("still editing");
+
+    // Closing the whole source window also releases its empty cached window.
+    await worker.evaluate(id => chrome.tabs.update(id, { active: true }), originals[0]);
+    await invoke("compact-covers", true);
+    const recreatedCover = (await covers())[0].id;
+    await worker.evaluate(id => chrome.tabs.update(id, { active: true }), recreatedCover);
+    await expect.poll(async () => (await covers())[0]?.title).toBe("▸ ChatGPT · 2");
+    await worker.evaluate(id => chrome.tabs.update(id, { active: true }), recreatedCover);
+    await expect.poll(async () => (await covers())[0]?.title).toBe("▾ ChatGPT · 2");
+    expect((await tabs()).filter(tab => tab.url.includes("/parking.html"))).toHaveLength(2);
+    await worker.evaluate(async source => {
+      await chrome.windows.create({ url: "about:blank", focused: false });
+      await chrome.windows.remove(source);
+    }, source);
+    await expect.poll(async () => (await tabs()).filter(tab => tab.url.includes("/parking.html"))).toEqual([]);
   } finally {
     await browser.close();
     await rm(profile, { recursive: true, force: true });

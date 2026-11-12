@@ -122,7 +122,14 @@ chrome.tabs.onRemoved.addListener((id, info) => {
 });
 chrome.tabs.onAttached.addListener((_id, info) => schedule(info.newWindowId));
 chrome.tabs.onDetached.addListener((_id, info) => schedule(info.oldWindowId));
-chrome.windows.onRemoved.addListener(windowId => { void serial(() => library.safely(() => library.windowRemoved(windowId))); });
+chrome.windows.onRemoved.addListener(windowId => {
+  void serial(async () => {
+    await library.safely(() => library.windowRemoved(windowId));
+    // An expanded stack can leave an empty reusable holding window behind.
+    // Reconcile surviving windows when its source window is closed.
+    await scheduleAll();
+  });
+});
 chrome.tabs.onMoved.addListener((_id, info) => schedule(info.windowId, false));
 chrome.tabs.onReplaced.addListener(id => {
   void chrome.tabs.get(id).then(tab => schedule(tab.windowId)).catch(() => {});
