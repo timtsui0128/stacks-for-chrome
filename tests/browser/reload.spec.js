@@ -43,6 +43,12 @@ for (const mode of ["native", "parked", "expanded"]) test(`extension reload rest
     const originals = before.filter(tab => tab.url.startsWith("https:")).map(tab => tab.id);
     const oldCover = before.find(tab => tab.url.includes("/cover.html?"));
     if (mode === "expanded") {
+      // The count can render as soon as tabs move back, before Chrome finishes
+      // grouping them and focusing the real page. Wait for the completed action.
+      await expect.poll(() => worker.evaluate(async ids => {
+        const tabs = await Promise.all(ids.map(id => chrome.tabs.get(id)));
+        return tabs.every(tab => tab.groupId >= 0) && tabs.some(tab => tab.active);
+      }, originals)).toBe(true);
       await worker.evaluate(async originals => {
         const tab = await chrome.tabs.get(originals[0]);
         await chrome.tabGroups.update(tab.groupId, { title: "论文 AI", color: "purple" });
@@ -81,6 +87,8 @@ for (const mode of ["native", "parked", "expanded"]) test(`extension reload rest
       await worker.evaluate(id => chrome.tabs.update(id, { active: true }), restoredCover);
       await expect.poll(() => worker.evaluate(async ({ source, originals }) => (await chrome.tabs.query({ windowId: source }))
         .filter(tab => originals.includes(tab.id)).length, { source, originals })).toBe(originals.length);
+      await expect.poll(() => worker.evaluate(async ({ source, originals }) => (await chrome.tabs.query({ windowId: source, active: true }))
+        .some(tab => originals.includes(tab.id)), { source, originals })).toBe(true);
       await worker.evaluate(id => chrome.tabs.update(id, { active: true }), restoredCover);
       await expect.poll(() => worker.evaluate(async source => (await chrome.tabs.query({ windowId: source, active: true }))[0].id, source)).toBe(selected);
       await worker.evaluate(id => chrome.tabs.update(id, { active: true }), restoredCover);

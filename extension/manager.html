@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Custom stacks · Stacks</title>
+  <title>Stacks</title>
   <link rel="icon" href="icons/32.png">
   <link rel="stylesheet" href="manager.css">
   <script type="module" src="src/manager.js"></script>
@@ -17,16 +17,23 @@
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
     <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
     <symbol id="i-organize" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></symbol>
   </defs></svg>
   <header class="brand">
     <div class="wordmark"><img src="icons/48.png" alt="" width="27" height="27"><span>stacks</span></div>
     <button id="new-stack" class="primary" aria-label="New custom stack"><svg class="icon"><use href="#i-plus"/></svg>New stack</button>
   </header>
-  <main>
+  <nav class="sections" role="tablist" aria-label="Stacks sections">
+    <button id="tab-open" role="tab" aria-selected="true" aria-controls="open-panel">Open</button>
+    <button id="tab-saved" role="tab" aria-selected="false" aria-controls="library-panel" tabindex="-1">Saved <span id="saved-count">0</span></button>
+    <button id="tab-backups" role="tab" aria-selected="false" aria-controls="library-panel" tabindex="-1">Backups</button>
+  </nav>
+  <main id="open-panel" role="tabpanel" aria-labelledby="tab-open">
     <h1 id="heading" class="sr-only">All tabs</h1>
     <div class="view-row">
       <div class="view-picker"><svg class="icon folder"><use href="#i-folder"/></svg><select id="category-filter" aria-label="View stack"><option value="all">All tabs</option></select><svg class="icon chevron"><use href="#i-chevron"/></svg></div>
       <button id="edit-stack" class="text-button" hidden>Edit stack</button>
+      <button id="save-later" class="icon-button" aria-label="Save stack for later" title="Save a whole stack for later"><svg class="icon"><use href="#i-save"/></svg></button>
       <button id="organize-window" class="icon-button" aria-label="Organize websites" title="Organize tabs by website"><svg class="icon"><use href="#i-organize"/></svg></button>
     </div>
     <div class="tools">
@@ -40,9 +47,18 @@
   <footer class="selection-bar">
     <div class="selection-summary"><span id="selection-count" role="status">Select tabs to move</span><button id="release" class="text-button" hidden>Return to automatic</button><button id="clear-selection" class="icon-button" aria-label="Clear selection" title="Clear selection" hidden><svg class="icon"><use href="#i-close"/></svg></button></div>
     <div class="move-row"><div class="destination-picker"><select id="destination" aria-label="Destination stack" disabled><option value="">Move to a stack…</option></select><svg class="icon chevron"><use href="#i-chevron"/></svg></div><button id="move" class="primary" disabled>Move tabs</button></div>
-    <p id="status" role="status" aria-live="polite"></p>
     <p id="selection-help" class="footnote">Custom stacks stay out of automatic grouping.</p>
   </footer>
+  <section id="library-panel" class="library-panel" role="tabpanel" aria-labelledby="tab-saved" hidden>
+    <div class="library-heading"><div><h1 id="library-title">Saved stacks</h1><p id="library-subtitle">Ready when you are.</p></div><button id="library-action">Save a stack</button></div>
+    <label id="backup-setting" class="include" hidden><input id="auto-backup" type="checkbox"><span>Automatic local backups</span></label>
+    <div class="search library-search"><svg class="icon"><use href="#i-search"/></svg><input id="library-search" type="search" placeholder="Search saved stacks" aria-label="Search saved items"></div>
+    <div id="library-list" class="library-list" aria-label="Saved items"></div>
+    <div id="library-empty" class="empty-state" hidden><svg class="empty-icon icon"><use href="#i-folder"/></svg><strong id="library-empty-title">Nothing saved yet</strong><p id="library-empty-description">Save a whole stack, then reopen it whenever you need it.</p></div>
+    <p id="library-notice" role="alert" hidden></p>
+    <p id="library-footnote" class="footnote">Stored on this device. Links, not copies of webpages.</p>
+  </section>
+  <div class="feedback"><p id="status" role="status" aria-live="polite"></p><button id="undo" class="text-button" hidden>Undo last move</button></div>
   <dialog id="editor" aria-labelledby="dialog-title">
     <form id="stack-form">
       <div class="dialog-heading"><h2 id="dialog-title">New custom stack</h2><button id="cancel" type="button" class="icon-button" aria-label="Cancel"><svg class="icon"><use href="#i-close"/></svg></button></div>
@@ -54,6 +70,27 @@
       <p id="dialog-status" role="alert"></p>
       <div class="dialog-actions"><button id="delete-stack" type="button" class="danger" hidden>Delete empty stack</button><button type="submit" id="save-stack" class="primary">Save stack</button></div>
     </form>
+  </dialog>
+  <dialog id="save-dialog" aria-labelledby="save-title">
+    <form id="save-form">
+      <h2 id="save-title">Save a stack</h2>
+      <p class="dialog-hint">Keep its links, name, color and page order.</p>
+      <label class="field">Stack<select id="save-source" required></select></label>
+      <label class="field">Saved name<input id="saved-name" maxlength="80" required autocomplete="off"></label>
+      <p id="save-summary" class="dialog-note"></p>
+      <label class="include"><input id="close-after-save" type="checkbox"><span>Close these pages after saving</span></label>
+      <p class="dialog-note">Reopening loads the saved links. Unsaved text, sign-in state and scroll position are not backed up. Pinned tabs, shared groups, local files and sign-in pages are excluded.</p>
+      <p id="save-error" class="dialog-error" role="alert"></p>
+      <div class="dialog-actions"><button id="save-cancel" type="button">Cancel</button><button id="save-confirm" type="submit" class="primary">Save & keep open</button></div>
+    </form>
+  </dialog>
+  <dialog id="item-dialog" aria-labelledby="item-title">
+    <h2 id="item-title">Saved stack</h2>
+    <p id="item-meta" class="dialog-hint"></p>
+    <div id="item-pages" class="item-pages"></div>
+    <p id="item-note" class="dialog-note">Reopens missing links in this window. Pages already open stay in their current groups.</p>
+    <p id="item-error" class="dialog-error" role="alert"></p>
+    <div class="dialog-actions"><button id="item-cancel">Cancel</button><button id="item-confirm" class="primary">Reopen missing pages</button></div>
   </dialog>
 </body>
 </html>

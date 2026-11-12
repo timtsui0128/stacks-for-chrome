@@ -60,7 +60,7 @@ test("custom stacks own mixed-site and parked tabs across navigation, grouping a
     await manager.getByLabel("Name", { exact: true }).fill("Literature review");
     await manager.getByRole("radio", { name: "purple", exact: true }).check();
     await manager.screenshot({ path: "/private/tmp/stacks-ui-editor.png" });
-    await manager.getByRole("button", { name: "Save stack" }).click();
+    await manager.getByRole("button", { name: "Save stack", exact: true }).click();
     await expect(manager.getByRole("dialog")).not.toBeVisible();
     await expect(manager.getByRole("status").filter({ hasText: "Custom stack created." })).toBeVisible();
     const managed = (await tabs()).filter(tab => ["https://chatgpt.com/Discussion", "https://claude.ai/Review"].includes(tab.url));
@@ -85,7 +85,7 @@ test("custom stacks own mixed-site and parked tabs across navigation, grouping a
     await manager.getByRole("button", { name: "Edit stack", exact: true }).click();
     await manager.getByLabel("Name", { exact: true }).fill("Paper <AI> ✨");
     await manager.getByRole("radio", { name: "orange", exact: true }).check();
-    await manager.getByRole("button", { name: "Save stack" }).click();
+    await manager.getByRole("button", { name: "Save stack", exact: true }).click();
     await expect(manager.getByRole("heading", { name: "Paper <AI> ✨", exact: true })).toBeVisible();
     expect(await worker.evaluate(id => chrome.tabGroups.get(id), customId)).toMatchObject({ title: "Paper <AI> ✨", color: "orange" });
     // Keep the tab group collapsed through unrelated automatic updates.
@@ -117,7 +117,7 @@ test("custom stacks own mixed-site and parked tabs across navigation, grouping a
     await manager.getByRole("button", { name: "New custom stack" }).click();
     await manager.getByLabel("Name", { exact: true }).fill("Reading list");
     await manager.getByRole("checkbox", { name: "Include 1 selected tab", exact: true }).uncheck();
-    await manager.getByRole("button", { name: "Save stack" }).click();
+    await manager.getByRole("button", { name: "Save stack", exact: true }).click();
     await expect(manager.getByRole("dialog")).not.toBeVisible();
     await expect(manager.getByRole("checkbox", { name: "Select Changed", exact: true })).toBeChecked();
     await manager.getByRole("checkbox", { name: "Select Notes", exact: true }).check();

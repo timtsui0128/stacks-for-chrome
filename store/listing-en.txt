@@ -1,0 +1,67 @@
+STORE TITLE
+Stacks — Tab Organizer
+
+SHORT DESCRIPTION
+Keep tabs together in Chrome. Organize by website with real logos, or create custom stacks that stay out of automatic grouping.
+
+DETAILED DESCRIPTION
+Keep your research open. Give your tab bar some room.
+
+Stacks brings related pages together in Chrome's top tab bar. Group tabs by website with recognizable website logos, or create your own named stacks for a paper, project or reading session.
+
+ORGANIZE BY WEBSITE
+Related tabs from the same website stay together. Each website stack can have a control tab showing its logo, name and tab count. Expand a stack when you need it, then collapse it to make space.
+
+CREATE YOUR OWN STACKS
+Put pages from different websites into one custom category. Choose a name and one of Chrome's nine group colors. Tabs in custom stacks stay out of automatic website grouping, even when you navigate to another website.
+
+MANAGE TABS IN A SMALL POPUP
+Open Stacks from the toolbar to search your open tabs, select several pages, create a category or move tabs into an existing one. Open, Saved and Backups stay in the same compact popup. The popup includes pages inside collapsed stacks. Your selection stays selected while you search or switch categories.
+
+SAVE A WHOLE STACK FOR LATER
+Save a website stack or custom category with its links and page order. Keep its pages open, or explicitly choose to close them after saving succeeds. Reopen missing links later without duplicating pages already open in the current window. Saved custom stacks retain their names and colors; website stacks use your current website settings.
+
+LOCAL BACKUPS AND UNDO
+Automatic local backups keep recent window snapshots so you can recover links after closing tabs. You can also make a manual backup, preview its pages, or turn automatic backups off. Undo recent category moves while keeping the same live pages open. Saved stacks and backups stay on this device.
+
+KEEP THE ORIGINAL PAGES OPEN
+Stacks organizes existing Chrome tabs. With the optional "Park collapsed tabs in a minimized window" setting enabled, collapsed website tabs move to a minimized Chrome window and return when expanded. They remain live tabs. Saving and closing a stack is a separate, explicit action.
+
+LOCAL BY DESIGN
+No Stacks account, backend server, advertising or analytics. Tab information is processed on your device. Saved stacks and backups keep complete page URLs and titles locally, along with organization settings and recovery metadata. No tab data is sent to the publisher. Read the privacy policy for details.
+
+GET STARTED
+1. Pin Stacks to your Chrome toolbar.
+2. Open two or more pages from a website, then choose Organize websites in the popup.
+3. Use the website control tab to expand or collapse its stack.
+4. Select pages in the popup and choose New stack to create a custom category.
+5. Use Saved to save a whole stack, or Backups to review recent local recovery copies.
+
+Right-click the toolbar icon for website grouping settings. Right-click a native colored group label to change its name or color.
+
+GOOD TO KNOW
+• Requires desktop Chrome 127 or later. Incognito mode is not supported.
+• Pinned tabs and shared groups are excluded from automatic grouping.
+• Chrome does not report another click on an already active tab. If a website control tab remains active, use its Expand and browse button or the native group label when available.
+• Parked tabs remain live. Closing the minimized parking window closes its pages; use Return tabs to their windows to bring them back first.
+• Saved copies contain links, not webpage contents, unsaved text, sign-in state or scroll position. Reopening loads each website again.
+• Automatic backups are enabled by default. Up to 20 recent backups are kept within a 6 MB library budget; saved stacks are not automatically deleted to make space. Uninstalling Stacks removes its local saved stacks and backups.
+• Backups exclude incognito and pinned tabs, shared groups, local files, browser/extension pages and recognized sign-in-provider URLs. Other URLs can still contain sensitive query parameters.
+• Screenshots use demonstration pages. Compact website stacks are shown with the optional parking setting enabled.
+
+Stacks is an independent project. Website names and logos identify the tabs being organized and do not imply endorsement or affiliation.
+
+LANGUAGE
+English
+
+CATEGORY
+Productivity / Workflow & Planning (choose the closest current dashboard category)
+
+HOMEPAGE
+https://github.com/timtsui0128/stacks-for-chrome
+
+SUPPORT URL
+https://github.com/timtsui0128/stacks-for-chrome/issues
+
+PRIVACY POLICY URL
+https://github.com/timtsui0128/stacks-for-chrome/blob/main/PRIVACY.md

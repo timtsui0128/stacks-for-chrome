@@ -10,7 +10,7 @@ export function createControls(api, engine, serial, scheduleAll) {
       api.contextMenus.update("compact-covers", { checked: settings.iconCovers && settings.compactCovers }),
       api.action.setBadgeText({ text: settings.autoGroup ? "" : "Ⅱ" }),
       api.action.setBadgeBackgroundColor({ color: "#697386" }),
-      api.action.setTitle({ title: settings.autoGroup ? "Custom stacks · Right-click for website grouping" : "Custom stacks · Auto-grouping paused" }),
+      api.action.setTitle({ title: settings.autoGroup ? "Stacks · Open, Saved & Backups" : "Stacks · Auto-grouping paused" }),
     ]);
   }
 
@@ -18,7 +18,7 @@ export function createControls(api, engine, serial, scheduleAll) {
     const settings = await engine.settings();
     await api.contextMenus.removeAll();
     const items = [
-      { id: "custom-manage", title: "Manage custom stacks…" },
+      { id: "custom-manage", title: "Open Stacks…" },
       { id: "organize", title: "Organize tabs in this window" },
       { id: "collapse", title: "Collapse other stacks" },
       { id: "expand", title: "Expand all stacks in this window" },

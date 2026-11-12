@@ -80,12 +80,25 @@ export function createCompactEngine(api, native, focusGuard = createFocusGuard()
     // Only explicitly recorded groups belong to compact stacks. Renaming their
     // markers edits their saved style; unrelated native groups stay manual.
     for (const cover of covers) {
-      const group = groups.find(group => group.id === records[cover.token]?.lineGroupId
+      const record = records[cover.token];
+      let reattached = false;
+      let group = groups.find(group => group.id === record?.lineGroupId
         && !custom.has(group.id)
         && group.windowId === cover.windowId && !group.shared
         && tabs.some(tab => tab.groupId === group.id && (records[cover.token]?.memberIds?.includes(tab.id) || records[cover.token]?.memberIds?.includes(tab.openerTabId))
           && belongs(tab, cover, records[cover.token])));
-      if (group) records[cover.token] = { ...records[cover.token], lineGroupId: group.id };
+      // A browser restart assigns new group/tab IDs. The extension-owned
+      // cover token plus an adjacent matching group is a durable association;
+      // a group called "ChatGPT" on its own is not evidence of ownership.
+      if (!group && record?.key === cover.key && record.lineTitle !== undefined) {
+        const next = tabs.find(tab => tab.windowId === cover.windowId && tab.index === cover.index + 1);
+        const adjacent = groups.find(item => item.id === next?.groupId && !item.shared && !custom.has(item.id)
+          && item.title === record.lineTitle && item.color === record.lineColor);
+        const members = adjacent && tabs.filter(tab => tab.groupId === adjacent.id);
+        if (members?.length && members.every(tab => !tab.pinned && siteForTab(tab)?.key === cover.key)) { group = adjacent; reattached = true; }
+      }
+      if (group) records[cover.token] = { ...record, windowId: cover.windowId, coverId: cover.id, lineGroupId: group.id,
+        memberIds: [...new Set([...(reattached ? [] : record?.memberIds || []), ...tabs.filter(tab => tab.groupId === group.id).map(tab => tab.id)])] };
       else if (records[cover.token]) delete records[cover.token].lineGroupId;
     }
     return {
@@ -335,6 +348,7 @@ export function createCompactEngine(api, native, focusGuard = createFocusGuard()
   async function sync(windowId, prefs, organize, force = false) {
     let state = await inventory();
     await forgetClosed(windowId, state, force);
+    await mergeDuplicateStacks(windowId);
     state = await inventory();
     const ctx = await native.context(windowId);
     const entries = state.covers.filter(cover => cover.windowId === windowId);
@@ -395,6 +409,37 @@ export function createCompactEngine(api, native, focusGuard = createFocusGuard()
       else await alignMembers(cover);
     }
     await publish(windowId);
+  }
+
+  async function mergeDuplicateStacks(windowId) {
+    const initial = await inventory();
+    const sites = new Map();
+    for (const cover of initial.covers.filter(tab => tab.windowId === windowId).sort((a, b) => a.index - b.index)) {
+      if (!sites.has(cover.key)) sites.set(cover.key, []);
+      sites.get(cover.key).push(cover);
+    }
+    for (const covers of sites.values()) {
+      if (covers.length < 2) continue;
+      await focusGuard.run(windowId, async () => {
+        const keeper = covers[0];
+        const wasCollapsed = covers.every(cover => parkedTabs(initial, cover).length > 0);
+        for (const cover of covers) {
+          const current = await inventory();
+          await removeLine(cover, current);
+          await moveBack(keeper, parkedTabs(current, cover));
+        }
+        const current = await inventory();
+        // Remove only our duplicate synthetic tabs. All real pages survive.
+        for (const cover of covers.slice(1)) delete current.records[cover.token];
+        await saveRecords(current.records);
+        await api.tabs.remove(covers.slice(1).map(cover => cover.id));
+        await alignMembers(keeper);
+        const updated = await inventory();
+        const members = localTabs(updated, keeper);
+        if (wasCollapsed && !members.some(tab => tab.active)) await park(keeper, members, updated);
+        await publish(windowId);
+      });
+    }
   }
 
   async function restoreNative(windowId) {
@@ -537,7 +582,7 @@ export function createCompactEngine(api, native, focusGuard = createFocusGuard()
 
   async function managementSnapshot(windowId) {
     const state = await inventory();
-    if (state.parkingPages.some(tab => tab.windowId === windowId)) throw new Error("Open Custom stacks from your main Chrome window.");
+    if (state.parkingPages.some(tab => tab.windowId === windowId)) throw new Error("Open Stacks from your main Chrome window.");
     const ctx = await native.context(windowId);
     const entries = state.covers.filter(cover => cover.windowId === windowId);
     const parked = entries.flatMap(cover => parkedTabs(state, cover).map(tab => ({ ...tab, website: cover.key, parked: true })));

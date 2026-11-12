@@ -4,7 +4,7 @@
 
 Keep related tabs together in Chrome's top tab bar. Stacks groups tabs by website, shows each site's real logo, and lets you expand or collapse its tabs.
 
-Version **0.8.1** refines the compact popup with aligned controls, website icons, a searchable tab list, a category picker, and selection-aware move actions. The fixes for neighbouring stacks opening after collapse or closing a page are retained. Automatic website stacks keep their website logos; custom groups keep their own text labels and colors. The minimal **03 Tabs** icon and English interface are unchanged.
+Version **0.9.0** adds **Open / Saved / Backups** to the same 440 × 580 toolbar popup. Save whole website or custom stacks, optionally close their pages after a successful save, reopen missing links, and undo category moves. Local backups help recover closed pages. Known duplicate automatic website stacks merge, and a surviving logo control tab can reconnect its group after Chrome changes group IDs. Automatic stacks keep their logos; custom stacks keep their own text labels and colors.
 
 ## Install
 
@@ -20,7 +20,7 @@ No build step, account, or companion app is required. To update an existing inst
 ## Use
 
 - Click the Stacks toolbar icon to open the small custom-stack popup. Use **Organize websites** inside it to organize the current window and collapse other website stacks.
-- Right-click that icon for **Manage custom stacks…**. Automatic grouping, website logos, parking and repair settings are inside **Website grouping**.
+- Right-click that icon for **Open Stacks…**. Automatic grouping, website logos, parking and repair settings are inside **Website grouping**.
 - Each website stack gets a control tab with its original logo, name, and tab count. Click that tab to expand or collapse its stack.
 - Expanded tabs have a native colored group label and underline. Right-click the label to change its text or color. Stacks remembers these settings for that website across windows and reloads.
 - Manually created groups keep their own labels. Pinned tabs and shared groups are left alone.
@@ -38,7 +38,25 @@ Custom stacks appear as native groups in Chrome's top tab bar, with a text label
 
 The popup lists the source window's eligible tabs and parked members, with search and multi-selection. Selection is preserved while filtering, with a notice for selected tabs outside the current view and a **Clear selection** control. **New stack…** in the destination picker creates a category directly from the selected tabs. Existing manually created native groups are recognized. Pinned tabs, shared groups and incognito tabs are excluded. Empty categories are kept for reuse and can be deleted without closing any pages. Dragging a tab out of a custom native group also makes it eligible for automatic grouping again.
 
-Categories and group associations are saved locally; pages remain live Chrome tabs. This is not a bookmark or closed-tab archive.
+Categories and group associations are saved locally. The Open section manages live Chrome tabs; Saved and Backups keep local link snapshots.
+
+### Save and reopen a stack
+
+1. In **Open**, choose a custom stack or website under **View stack**, then click **Save stack for later**. You can also use **Saved → Save a stack**.
+2. Choose a saved name. **Save & keep open** is the default. Select **Close these pages after saving** to use **Save & close tabs** instead.
+3. In **Saved**, choose a saved copy, review its page list and click **Reopen missing pages**.
+
+The extension writes the saved copy before closing anything. If the stack changes while the dialog is open or saving fails, its pages stay open. Reopening skips matching pages already in the destination window (including parked pages), preserving intentional duplicate counts. Existing pages keep their current groups. New custom-stack pages recover their name, color and order and remain excluded from automatic grouping; website stacks follow the current website grouping settings and colors.
+
+Saved links survive Chrome and extension restarts. They do not contain unsaved form text, sign-in state or scroll position. Pinned tabs, shared groups, local files, browser pages and recognized sign-in-provider pages are excluded. Copies are stored on this device and are deleted if the extension is uninstalled.
+
+### Backups and Undo
+
+- **Backups → Back up now** saves the eligible pages and categories in the current window, including parked members.
+- **Automatic local backups** is on by default. It maintains the latest window state, checkpoints changed states, and retains pre-close and pre-move snapshots. Up to 20 recent backups are kept across windows, subject to a 6 MB library budget. Identical snapshots are not duplicated; saved stacks are never evicted to make space.
+- Select a backup to review its pages and reopen missing links in the current window. This never closes or replaces existing tabs. Backups only cover pages recorded while Stacks was running and are best-effort after abrupt browser termination.
+- **Undo last move** restores the previous custom/automatic assignment using the same live tabs, preserving page state. It covers the last 10 popup category moves in the current Chrome session and refuses to overwrite a later manual regrouping.
+- Turn automatic backups off to stop recording and clear the current recovery cache. Existing saved stacks and backups remain available and can be deleted individually.
 
 ### Collapsed tabs
 
@@ -58,16 +76,16 @@ If an older installation lost a website control tab, select a page in that group
 
 ## Privacy and permissions
 
-Stacks runs locally. It has no backend, telemetry, remote code, or webpage content scripts. It does not send tab data to a server or store complete page URLs, conversation titles, page contents, or sign-in tokens.
+Stacks runs locally. It has no backend, telemetry, remote code, or webpage content scripts. Saved stacks and backups store complete page URLs and titles on this device so they can be reopened. No tab data is sent to a server. Page contents, form entries, cookies and sign-in state are not read or backed up. URLs may themselves contain sensitive information; see [PRIVACY.md](PRIVACY.md).
 
-Local storage contains settings, website identifiers, group styles, custom category names/colors and group membership IDs, recovery metadata, and cached logo PNGs. Website logos are read from Chrome's favicon cache. A bundled Canvas favicon provides a fallback for that site's sign-in flow.
+Local storage contains settings, website identifiers, group styles, custom category names/colors and group membership IDs, saved stacks, backup snapshots, recovery metadata, and cached logo PNGs. Undo history is held in session storage. Website logos are read from Chrome's favicon cache. A bundled Canvas favicon provides a fallback for that site's sign-in flow.
 
 | Permission | Purpose |
 | --- | --- |
-| `tabs` | Read tab URLs to identify websites and move existing tabs |
+| `tabs` | Read URLs/titles to identify websites, organize live tabs, save links and reopen missing pages |
 | `tabGroups` | Create and manage native tab groups |
-| `storage` | Save settings, styles, logo caches, and recovery metadata |
-| `alarms` | Reconcile tab changes missed by browser events |
+| `storage` | Save settings, styles, logo caches, saved links, backup snapshots and recovery metadata |
+| `alarms` | Reconcile tab changes and refresh local recovery snapshots |
 | `contextMenus` | Provide toolbar settings |
 | `favicon` | Read website icons from Chrome's local cache |
 
@@ -86,7 +104,7 @@ npm run test:browser
 npm run package
 ```
 
-The package is written to `dist/stacks-0.8.1.zip`. Browser tests use isolated temporary profiles, including adjacent-stack collapse, closing an active page beside collapsed stacks, custom categorization, website logos, unsaved-page preservation and reload recovery.
+The package is written to `dist/stacks-0.9.0.zip`. Browser tests use isolated temporary profiles, including adjacent-stack collapse, duplicate automatic stacks, remapped group IDs, save/close/reopen, custom categorization, website logos, unsaved-page preservation and reload recovery.
 
 To regenerate the approved app icon, install Pillow (`python3 -m pip install Pillow`) and run `python3 scripts/icons.py`. This produces SVG brand assets and 16, 32, 48, and 128 px PNG extension icons from shared geometry. Website favicons are separate from the app icon.
 

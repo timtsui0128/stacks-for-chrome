@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stacks — Tab Organizer",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Keep tabs together in Chrome. Organize by website with real logos, or create custom stacks that stay out of automatic grouping.",
   "minimum_chrome_version": "127",
   "permissions": [
@@ -18,7 +18,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Custom stacks · Right-click for website grouping",
+    "default_title": "Stacks · Open, Saved & Backups",
     "default_popup": "manager.html",
     "default_icon": {
       "16": "icons/16.png",
