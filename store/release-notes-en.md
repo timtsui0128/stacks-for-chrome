@@ -4,15 +4,16 @@ Prepared on 12 November 2026. This update has not been uploaded or submitted for
 
 - Merge duplicate website stacks when their automatic ownership can be verified.
 - Reconnect a surviving website-logo control tab to its native group after Chrome changes group and tab IDs. Explicit custom categories remain independent.
+- Preserve the existing logo-click interaction when Chrome temporarily blocks tab edits during mouse-down: retry expansion, collapse and focus changes after release, and cancel if the user selects another page.
 - Add Open, Saved and Backups to the existing 440 × 580 toolbar popup.
 - Save a whole website or custom stack, keep its pages open or explicitly save and close, and reopen missing links later.
 - Add local window backups and Undo for recent category moves.
 
 No new permissions, host access, content scripts or remote services are added. Saved stacks and backups now retain complete URLs and titles locally; update the dashboard privacy disclosures and the public privacy policy before submission.
 
-Validation: 28 unit tests passed. All 13 browser scenarios were verified, with the five save/restore and reload scenarios passing two consecutive runs after asynchronous test waits were corrected. Tests use isolated profiles and demonstration pages.
+Validation: 28 unit tests and all 14 browser scenarios passed, including a regression for temporary tab-edit locks and cancellation when the user changes focus. The new regression failed before the fix. Computer Use also verified expansion and collapse with a 600 ms held mouse click in an isolated Chrome for Testing window. Manifest, syntax and permission checks passed. Automated tests use isolated profiles and demonstration pages.
 
-This addresses reproducible recovery and duplicate-stack cases. The user's current Chrome profile has not been inspected or repaired in place.
+This addresses reproducible recovery, duplicate-stack and native logo-click cases. The logo assets and existing expand/collapse interface are unchanged.
 
 ## Submission
 

@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS, groupLabel, groupTitle, planGroups, resolveOwnership, siteForTab } from "./sites.js";
-import { coverPresentation, coverUrl, iconRevision, readCover } from "./covers.js";
+import { coverPresentation, coverUrl, editTabs, iconRevision, readCover } from "./covers.js";
 import { customGroupIds } from "./custom.js";
 
 export function createEngine(api) {
@@ -223,19 +223,29 @@ export function createEngine(api) {
     const group = ctx.groups.find(group => group.id === Number(id));
     const members = ctx.tabs.filter(member => member.groupId === group.id);
     if (!members.length) return false;
+    // Native tab activation can arrive before the mouse is released. Chrome
+    // temporarily refuses edits then; finish the same click after release,
+    // unless the user has already selected, moved or navigated to another tab.
+    const edit = operation => editTabs(async () => {
+      const current = await api.tabs.get(tabId).catch(() => null);
+      if (!current?.active || current.windowId !== tab.windowId
+        || readCover(current, coverBase)?.token !== cover.token) return false;
+      await operation();
+      return true;
+    });
     if (group.collapsed || openOnly) {
-      await api.tabGroups.update(group.id, { collapsed: false });
+      if (!await edit(() => api.tabGroups.update(group.id, { collapsed: false }))) return false;
       const target = members.find(member => member.id === owner.lastTabId) || members[0];
-      await api.tabs.update(target.id, { active: true });
+      if (!await edit(() => api.tabs.update(target.id, { active: true }))) return false;
     } else {
       const saved = await api.storage.session.get("lastRealTabs");
       const previous = saved.lastRealTabs?.[tab.windowId];
       const outside = ctx.tabs.filter(candidate => candidate.groupId !== group.id && !readCover(candidate, coverBase));
       const target = outside.find(candidate => candidate.id === previous) || outside.find(candidate => candidate.groupId === -1) || outside[0];
-      await api.tabGroups.update(group.id, { collapsed: true });
+      if (!await edit(() => api.tabGroups.update(group.id, { collapsed: true }))) return false;
       if (target) {
-        if (target.groupId !== -1) await api.tabGroups.update(target.groupId, { collapsed: false });
-        await api.tabs.update(target.id, { active: true });
+        if (target.groupId !== -1 && !await edit(() => api.tabGroups.update(target.groupId, { collapsed: false }))) return false;
+        if (!await edit(() => api.tabs.update(target.id, { active: true }))) return false;
       }
       // With no other real page to focus, the cover stays selected and provides
       // an accessible "open" button; Chrome emits no click event on an active tab.
