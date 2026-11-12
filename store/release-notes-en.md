@@ -1,6 +1,8 @@
 # Stacks 0.9.0
 
-Prepared on 12 November 2026. This update has not been uploaded or submitted for Chrome Web Store review.
+Prepared on 12 November 2026. The 0.9.0 package has been uploaded as a draft update to the existing Chrome Web Store item `jgpebokkiodhcjjmflmhmoolimmaoldh`. The description, permission justifications and reviewer test instructions have been saved, and the public privacy policy is current. Screenshot 3–4 replacement and review submission are still pending; published version 0.8.1 remains available.
+
+Uploaded package SHA-256: `92bea91988b9efef3a7d173dfcd4e5550676ad44ba3599cd5ec478c0eaa36960`.
 
 - Merge duplicate website stacks when their automatic ownership can be verified.
 - Reconnect a surviving website-logo control tab to its native group after Chrome changes group and tab IDs. Explicit custom categories remain independent.
