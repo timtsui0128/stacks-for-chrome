@@ -1,8 +1,8 @@
 # Privacy Policy — Stacks — Tab Organizer
 
-Effective date: 12 November 2026
+Effective date: 23 November 2026
 
-Applies to: Stacks — Tab Organizer, version 0.9.0
+Applies to: Stacks — Tab Organizer, versions 0.9.0 through 0.10.0
 
 Publisher: timtsui0128
 
@@ -22,6 +22,8 @@ This information is processed locally for tab organization, search within the po
 ## What is stored
 
 Chrome's local extension storage holds preferences, website identifiers, group labels and colors, custom categories, group membership and recovery identifiers, and cached website icon images. Saved stacks and local backup snapshots additionally store complete webpage URLs, titles, page order, category names and colors, and identifiers used to reconnect open tabs. Temporary session storage holds stack ownership, focus identifiers and up to ten recent category moves for Undo.
+
+Since version 0.9.1, Stacks can store a group color derived locally from a website icon. In version 0.10.0, choosing **Collect ungrouped** groups loose tabs in the current window. Stacks can retain the websites represented in that group to recognize it after a browser restart.
 
 Saved stacks are created when you choose Save. Automatic local backups are enabled by default and maintain recovery snapshots of eligible open pages while Stacks is running, including checkpoints before detected closures and category moves. This is a local record of open-page states, not a query of Chrome's browsing-history database. Stacks excludes incognito and pinned tabs, shared groups, local files, browser/extension pages, URLs with embedded usernames or passwords, and recognized sign-in-provider URLs from these snapshots. Other URLs may still contain sensitive query parameters; Stacks does not inspect page contents to determine their sensitivity.
 
